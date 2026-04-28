@@ -9,41 +9,54 @@ MARKETS = {
     "OMX 30": "^OMX"
 }
 
-@st.cache_data(ttl=600)  # Cache data for 10 minutes to improve performance
+@st.cache_data(ttl=600)
 def get_market_data(ticker_symbol):
+    """Fetches price history for metrics and charting."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        # Fetching the last 2 days of data to calculate change
-        hist = ticker.history(period="2d")
-        if len(hist) < 2:
+        # Fetching 1 month of history for the graph
+        hist = ticker.history(period="1mo")
+        
+        if hist.empty or len(hist) < 2:
             return None, None
         
-        current_price = hist['Close'].iloc[-1]
-        previous_close = hist['Close'].iloc[-2]
-        change = current_price - previous_close
-        return current_price, change
-    except Exception as e:
+        return hist, ticker_symbol
+    except Exception:
         return None, None
 
 def render():
     st.header("Popular Markets")
     
-    # Create four columns for the cards
+    # Create columns for the layout
     cols = st.columns(len(MARKETS))
     
-    for col, (name, ticker) in zip(cols, MARKETS.items()):
-        price, change = get_market_data(ticker)
+    for col, (name, ticker_symbol) in zip(cols, MARKETS.items()):
+        hist, symbol = get_market_data(ticker_symbol)
         
         with col:
-            if price is not None:
-                # Format change as a percentage for better context
-                change_pct = (change / (price - change)) * 100
+            if hist is not None:
+                # Calculate metric values
+                current_price = hist['Close'].iloc[-1]
+                previous_close = hist['Close'].iloc[-2]
+                change = current_price - previous_close
+                change_pct = (change / (current_price - change)) * 100
+                
+                # 1. Display the Metric
                 st.metric(
                     label=name,
-                    value=f"{price:,.2f}",
+                    value=f"{current_price:,.2f}",
                     delta=f"{change:,.2f} ({change_pct:.2f}%)"
                 )
+                
+                # 2. Display the Graph (Sparkline style)
+                # We only plot the 'Close' price and remove the legend/labels for a cleaner look
+                st.line_chart(
+                    hist['Close'], 
+                    height=100, 
+                    use_container_width=True
+                )
             else:
-                st.error(f"Error loading {name}")
+                st.error(f"Unavailable: {name}")
 
-    st.caption("Data provided by Yahoo Finance. Prices are delayed.")
+    st.caption("Graphs show performance over the last 30 days.")
+    st.caption("Data: Yahoo Finance. Currencies: USD (NASDAQ/SPY), HKD (HSI), SEK (OMX 30).")
