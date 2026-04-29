@@ -1,0 +1,5 @@
+# Streamlit theme configuration.
+# Sets the dashboard to use Streamlit's built-in dark theme by default
+# for all users, regardless of their per-browser theme preference.
+[theme]
+base = "dark"
