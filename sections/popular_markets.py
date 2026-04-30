@@ -1,12 +1,14 @@
 import streamlit as st
 import yfinance as yf
 
-# Mapping market names to Yahoo Finance tickers
+# Mapping market names to Yahoo Finance tickers.
+# each entry carries both ticker and currency,
+# so the price can be shown as e.g. "24,586.17 USD" or "3,037.47 SEK".
 MARKETS = {
-    "NASDAQ": "^IXIC",
-    "SPY (S&P 500)": "SPY",
-    "Hong Kong (HSI)": "^HSI",
-    "OMX 30": "^OMX"
+    "NASDAQ":          {"ticker": "^IXIC", "currency": "USD"},
+    "SPY (S&P 500)":   {"ticker": "SPY",   "currency": "USD"},
+    "Hong Kong (HSI)": {"ticker": "^HSI",  "currency": "HKD"},
+    "OMX 30":          {"ticker": "^OMX",  "currency": "SEK"},
 }
 
 @st.cache_data(ttl=600)
@@ -30,8 +32,10 @@ def render():
     # Create columns for the layout
     cols = st.columns(len(MARKETS))
     
-    for col, (name, ticker_symbol) in zip(cols, MARKETS.items()):
-        hist, symbol = get_market_data(ticker_symbol)
+    # info is a dict with both ticker and currency.
+    for col, (name, info) in zip(cols, MARKETS.items()):
+        hist, symbol = get_market_data(info["ticker"])
+        currency = info["currency"]
         
         with col:
             if hist is not None:
@@ -42,9 +46,10 @@ def render():
                 change_pct = (change / (current_price - change)) * 100
                 
                 # 1. Display the Metric
+                # value includes the currency suffix.
                 st.metric(
                     label=name,
-                    value=f"{current_price:,.2f}",
+                    value=f"{current_price:,.2f} {currency}",
                     delta=f"{change:,.2f} ({change_pct:.2f}%)"
                 )
                 
@@ -59,4 +64,5 @@ def render():
                 st.error(f"Unavailable: {name}")
 
     st.caption("Graphs show performance over the last 30 days.")
-    st.caption("Data: Yahoo Finance. Currencies: USD (NASDAQ/SPY), HKD (HSI), SEK (OMX 30).")
+    # dropped the explicit currency list since it's now shown per market.
+    st.caption("Data: Yahoo Finance.")

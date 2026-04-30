@@ -2,11 +2,12 @@ import streamlit as st
 import yfinance as yf
 
 # Mapping personal stock names to Yahoo Finance tickers.
-
+# each entry carries both ticker and currency,
+# so the price can be shown as e.g. "563.40 SEK" or "424.17 USD".
 MY_STOCKS = {
-    "Saab": "SAAB-B.ST",
-    "Spotify": "SPOT",
-    "Microsoft": "MSFT",
+    "Saab":      {"ticker": "SAAB-B.ST", "currency": "SEK"},
+    "Spotify":   {"ticker": "SPOT",      "currency": "USD"},
+    "Microsoft": {"ticker": "MSFT",      "currency": "USD"},
 }
 
 # Cached fetch of price history for each personal stock.
@@ -33,10 +34,12 @@ def render():
     # Create one column per personal stock 
     cols = st.columns(len(MY_STOCKS))
 
-    # Iterate over (column, (name, ticker)) pairs and render
+    # Iterate over (column, (name, info)) pairs and render
     # a metric + sparkline in each column.
-    for col, (name, ticker_symbol) in zip(cols, MY_STOCKS.items()):
-        hist, symbol = get_stock_data(ticker_symbol)
+    # info is now a dict with both ticker and currency.
+    for col, (name, info) in zip(cols, MY_STOCKS.items()):
+        hist, symbol = get_stock_data(info["ticker"])
+        currency = info["currency"]
 
         with col:
             if hist is not None:
@@ -47,9 +50,10 @@ def render():
                 change_pct = (change / (current_price - change)) * 100
 
                 # Display the Metric (price + absolute/percent change)
+                # value now includes the currency suffix.
                 st.metric(
                     label=name,
-                    value=f"{current_price:,.2f}",
+                    value=f"{current_price:,.2f} {currency}",
                     delta=f"{change:,.2f} ({change_pct:.2f}%)"
                 )
 
@@ -64,6 +68,7 @@ def render():
                 # error fallback message 
                 st.error(f"Unavailable: {name}")
 
-    # Captions explaining the chart window and data source/currencies.
+    # Captions explaining the chart window and data source.
     st.caption("Graphs show performance over the last 30 days.")
-    st.caption("Data: Yahoo Finance. Currencies: SEK (Saab), USD (Spotify, Microsoft).")
+    # dropped the explicit currency list since it's now shown per stock.
+    st.caption("Data: Yahoo Finance.")
