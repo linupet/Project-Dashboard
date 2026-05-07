@@ -9,25 +9,6 @@ st.set_page_config(
     layout="wide",
 )
 
-
-def render_overview():
-    """The Overview view stacks every section with dividers between them."""
-    news.render()
-    st.divider()
-    popular_markets.render()
-    st.divider()
-    my_stocks.render()
-
-
-# Maps the sidebar radio labels to the function that renders that view.
-# Adding a new view = add one entry here.
-VIEWS = {
-    "Overview": render_overview,
-    "News": news.render,
-    "Popular markets": popular_markets.render,
-    "My stocks": my_stocks.render,
-}
-
 # Sidebar
 with st.sidebar:
     st.title("Stock Dashboard")
@@ -42,10 +23,23 @@ with st.sidebar:
         except Exception:
             st.error("Invalid Ticker")
 
-    view = st.radio("Navigate", list(VIEWS.keys()))
+    view = st.radio(
+        "Navigate",
+        ["Overview", "News", "Popular markets", "My stocks"],
+    )
 
 # Main view
 st.title("Stock Dashboard")
 
-# Look up the renderer for the selected view and call it.
-VIEWS[view]()
+if view == "Overview":
+    news.render()
+    st.divider()
+    popular_markets.render()
+    st.divider()
+    my_stocks.render()
+elif view == "News":
+    news.render()
+elif view == "Popular markets":
+    popular_markets.render()
+elif view == "My stocks":
+    my_stocks.render()
