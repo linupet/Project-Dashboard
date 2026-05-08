@@ -5,10 +5,10 @@ from sections._common import get_price_history, build_sparkline
 # Popular markets to display, each with its Yahoo Finance ticker and
 # the currency the index is quoted in.
 MARKETS = {
-    "NASDAQ":          {"ticker": "^IXIC", "currency": "USD"},
-    "SPY (S&P 500)":   {"ticker": "SPY",   "currency": "USD"},
-    "Hong Kong (HSI)": {"ticker": "^HSI",  "currency": "HKD"},
-    "OMX 30":          {"ticker": "^OMX",  "currency": "SEK"},
+    "S&P 500":   {"ticker": "^GSPC",  "currency": "USD"},
+    "NASDAQ":    {"ticker": "^IXIC",  "currency": "USD"},
+    "Dow Jones": {"ticker": "^DJI",   "currency": "USD"},
+    "DAX":       {"ticker": "^GDAXI", "currency": "EUR"},
 }
 
 

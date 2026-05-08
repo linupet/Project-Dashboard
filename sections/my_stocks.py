@@ -5,9 +5,10 @@ from sections._common import get_price_history, build_sparkline
 # Personal stocks to display, each with its Yahoo Finance ticker and
 # the currency the price should be shown in.
 MY_STOCKS = {
-    "Saab":      {"ticker": "SAAB-B.ST", "currency": "SEK"},
-    "Spotify":   {"ticker": "SPOT",      "currency": "USD"},
-    "Microsoft": {"ticker": "MSFT",      "currency": "USD"},
+    "AppLovin":    {"ticker": "APP",    "currency": "USD"},
+    "Palantir":    {"ticker": "PLTR",   "currency": "USD"},
+    "Nvidia":      {"ticker": "NVDA",   "currency": "USD"},
+    "Rheinmetall": {"ticker": "RHM.DE", "currency": "EUR"},
 }
 
 
