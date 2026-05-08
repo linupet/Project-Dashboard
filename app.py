@@ -4,17 +4,16 @@ import yfinance as yf
 from sections import news, popular_markets, my_stocks
 
 st.set_page_config(
-    page_title = "Stock Dashboard",
-    page_icon = "📈",
-    layout = "wide",
+    page_title="Stock Dashboard",
+    page_icon="📈",
+    layout="wide",
 )
 
-# Sidebar 
+# Sidebar
 with st.sidebar:
     st.title("Stock Dashboard")
-    
-    ## Add a search bar for tickers
-    ## Display info about the seached ticker in the sidebar
+
+    # Search bar for an arbitrary ticker; shows its current price below.
     ticker_input = st.text_input("Search Stock Ticker", value="Write your ticker here").upper()
     if ticker_input:
         try:

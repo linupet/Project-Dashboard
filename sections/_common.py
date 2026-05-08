@@ -1,49 +1,54 @@
-"""Shared helpers for the dashboard sections.
+"""Shared helpers used by the dashboard sections.
 
-Both my_stocks.py and popular_markets.py used to define their own
-near-identical fetch function and sparkline builder. They now import
-from this module instead, so the logic only lives in one place.
+Provides the cached price-history fetch and the Plotly sparkline
+builder that both my_stocks and popular_markets render with.
 """
+
+import logging
 
 import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
 
+logger = logging.getLogger(__name__)
 
-# Cached fetch of price history for a single ticker.
-# 10 minute TTL so we avoid hammering Yahoo on every rerun.
+
+# Cached for 10 minutes so Streamlit reruns don't refetch on every interaction.
 @st.cache_data(ttl=600)
-def get_price_history(ticker_symbol):
-    """Fetches 1 month of price history for metrics and charting."""
+def get_price_history(ticker_symbol, period="1mo"):
+    """Returns the price history DataFrame, or None if unavailable.
+
+    A history of fewer than 2 rows is treated as unavailable since the
+    callers compute a day-over-day change from the last two closes.
+    """
     try:
-        ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="1mo")
-
-        if hist.empty or len(hist) < 2:
-            return None, None
-
-        return hist, ticker_symbol
+        hist = yf.Ticker(ticker_symbol).history(period=period)
     except Exception:
-        return None, None
+        # Log with traceback so failures are visible in the terminal,
+        # but keep the UI clean by returning None.
+        logger.exception("Failed to fetch history for %s", ticker_symbol)
+        return None
+
+    if hist.empty or len(hist) < 2:
+        return None
+
+    return hist
 
 
-# Builds a clean Plotly area-chart sparkline.
-# Uses a single blue color regardless of direction, with a vertical
-# gradient fill that fades downward to transparent.
+# Returns a minimal Plotly area chart: blue line with a vertical gradient
+# fill that fades to transparent at the bottom, no axes or legend.
 def build_sparkline(hist):
-    # Fixed blue color for the line itself.
     color_line = "#3b82f6"
 
-    # Tight y-axis range so the line fills the visible plot area.
+    # Slightly padded y-range so the line doesn't touch the chart edges.
     y_min = hist["Close"].min() * 0.98
     y_max = hist["Close"].max() * 1.02
 
     fig = go.Figure()
 
-    # Invisible baseline trace at the bottom of the visible chart.
-    # The price trace fills "tonexty" down to this baseline, which makes
-    # the gradient span the whole visible area instead of from y=0 (which
-    # is far below the visible window with our tight y-range).
+    # Invisible baseline at y_min. The price trace fills "tonexty" down to
+    # this trace, which makes the gradient span the visible chart area
+    # instead of stretching from y=0 (far below the padded y-range).
     fig.add_trace(go.Scatter(
         x=hist.index,
         y=[y_min] * len(hist),
@@ -53,8 +58,7 @@ def build_sparkline(hist):
         showlegend=False,
     ))
 
-    # Price line — fills DOWN to the baseline trace above with a vertical
-    # gradient: 40% opacity blue at the top, fully transparent at the bottom.
+    # Price line with a vertical gradient fill down to the baseline above.
     fig.add_trace(go.Scatter(
         x=hist.index,
         y=hist["Close"],
@@ -68,16 +72,16 @@ def build_sparkline(hist):
                 [1.0, "rgba(59,130,246,0.4)"],   # top: 40% opacity blue
             ],
         ),
-        # Hover shows date + price; <extra></extra> hides the trace name box.
+        # <extra></extra> removes the default trace label from the hover box.
         hovertemplate="%{x|%b %d}<br>%{y:,.2f}<extra></extra>",
         showlegend=False,
     ))
 
+    # Edge-to-edge layout with hidden axes and a transparent background
+    # so the chart blends into the surrounding Streamlit column.
     fig.update_layout(
         height=120,
-        # Zero margins so the sparkline fills the column edge to edge.
         margin=dict(l=0, r=0, t=0, b=0),
-        # Transparent backgrounds so the Streamlit dark theme shows through.
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(visible=False),
