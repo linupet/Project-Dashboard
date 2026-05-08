@@ -1,5 +1,6 @@
 # Streamlit theme configuration.
-# Sets the dashboard to use Streamlit's built-in dark theme by default
-# for all users, regardless of their per-browser theme preference.
+# Forces the dark theme for all users and overrides Streamlit's default
+# red accent so primary buttons (the active nav item) appear dark grey.
 [theme]
 base = "dark"
+primaryColor = "#3a3a3a"

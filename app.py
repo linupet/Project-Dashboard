@@ -9,12 +9,40 @@ st.set_page_config(
     layout="wide",
 )
 
+# Style the sidebar nav buttons: stack edge-to-edge with no vertical gap
+# and square corners so consecutive buttons feel like one connected list.
+# We target the inner vertical block (created by st.container() below) so
+# the rest of the sidebar keeps its normal spacing.
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
+        gap: 0;
+    }
+    section[data-testid="stSidebar"] .stButton > button {
+        border-radius: 0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+VIEW_NAMES = ["Overview", "News", "Popular markets", "My stocks"]
+
+# Streamlit reruns the whole script on every interaction, so we keep the
+# selected view in session_state so it survives across reruns.
+if "view" not in st.session_state:
+    st.session_state.view = "Overview"
+
 # Sidebar
 with st.sidebar:
     st.title("Stock Dashboard")
 
     # Search bar for an arbitrary ticker; shows its current price below.
-    ticker_input = st.text_input("Search Stock Ticker", value="Write your ticker here").upper()
+    ticker_input = st.text_input(
+        "Search Stock Ticker",
+        placeholder="Write your ticker here",
+    ).upper()
     if ticker_input:
         try:
             ticker_data = yf.Ticker(ticker_input)
@@ -23,10 +51,17 @@ with st.sidebar:
         except Exception:
             st.error("Invalid Ticker")
 
-    view = st.radio(
-        "Navigate",
-        ["Overview", "News", "Popular markets", "My stocks"],
-    )
+    # One full-width button per section, wrapped in a container so the CSS
+    # above can remove the gap between them. The currently selected view is
+    # rendered as a "primary" button so it stands out.
+    with st.container():
+        for name in VIEW_NAMES:
+            button_type = "primary" if st.session_state.view == name else "secondary"
+            if st.button(name, use_container_width=True, type=button_type):
+                st.session_state.view = name
+                st.rerun()
+
+view = st.session_state.view
 
 # Main view
 st.title("Stock Dashboard")
