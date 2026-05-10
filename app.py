@@ -8,94 +8,65 @@ st.set_page_config(
     layout="wide",
 )
 
-# Initialize Session State
-if "view" not in st.session_state:
-    st.session_state.view = "Overview"
-
+# Initialize Session State for custom pinned stocks
 if "my_stocks" not in st.session_state:
-    # Initialize with your default list
-    st.session_state.my_stocks = {
-        "AppLovin":    {"ticker": "APP",    "currency": "USD"},
-        "Palantir":    {"ticker": "PLTR",   "currency": "USD"},
-        "Nvidia":      {"ticker": "NVDA",   "currency": "USD"},
-        "Rheinmetall": {"ticker": "RHM.DE", "currency": "EUR"},
-    }
+    st.session_state.my_stocks = {}
 
-# Style the sidebar
-st.markdown(
-    """
-    <style>
-    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
-        gap: 0;
-    }
-    section[data-testid="stSidebar"] .stButton > button {
-        border-radius: 0;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Define Static Categories
+MOST_POPULAR = {
+    "Apple": {"ticker": "AAPL", "currency": "USD"},
+    "Microsoft": {"ticker": "MSFT", "currency": "USD"},
+    "Google": {"ticker": "GOOGL", "currency": "USD"},
+    "Nvidia": {"ticker": "NVDA", "currency": "USD"},
+}
 
-VIEW_NAMES = ["Overview", "News", "Popular markets", "My stocks"]
+LOCAL_STOCKS = {
+    "Investor AB": {"ticker": "INVE-B.ST", "currency": "SEK"},
+    "Atlas Copco": {"ticker": "ATCO-B.ST", "currency": "SEK"},
+    "Volvo B": {"ticker": "VOLV-B.ST", "currency": "SEK"},
+    "Ericsson B": {"ticker": "ERIC-B.ST", "currency": "SEK"},
+}
 
-# Sidebar
+# Sidebar Logic
 with st.sidebar:
     st.title("Stock Dashboard")
-
-    # --- Improved Search Section ---
-    st.subheader("Search & Pin")
-    search_query = st.text_input("Search Stock (Name or Ticker)", placeholder="e.g. Apple or AAPL")
     
-    if search_query:
-        # Search for matches using yfinance
-        search = yf.Search(search_query, max_results=5)
-        results = search.quotes
-        
-        if results:
-            # Create a dictionary of display names to ticker info
-            options = {f"{r.get('shortname', 'Unknown')} ({r['symbol']})": r for r in results if 'symbol' in r}
-            selected_display = st.selectbox("Select match", options.keys())
-            
-            if selected_display:
-                selected_stock = options[selected_display]
-                ticker = selected_stock['symbol']
-                name = selected_stock.get('shortname', ticker)
-                
-                # Display price and Pin button
-                try:
-                    t = yf.Ticker(ticker)
-                    # Note: .info can be slow; price fetching is best-effort here
-                    price_info = t.fast_info
-                    current_price = price_info.get('last_price', 'N/A')
-                    currency = price_info.get('currency', 'USD')
-                    
-                    st.write(f"**Price:** {current_price:,.2f} {currency}" if isinstance(current_price, (int, float)) else f"**Price:** {current_price}")
-                    
-                    if st.button("📌 Pin to My Stocks", use_container_width=True):
-                        st.session_state.my_stocks[name] = {
-                            "ticker": ticker,
-                            "currency": currency
-                        }
-                        st.success(f"Pinned {name}!")
-                        st.rerun()
-                except Exception:
-                    st.error("Select a result to see details.")
-        else:
-            st.warning("No matches found.")
+    # Navigation
+    if "view" not in st.session_state:
+        st.session_state.view = "Overview"
     
-    st.divider()
-
-    # Sidebar Navigation
     with st.container():
-        for name in VIEW_NAMES:
-            button_type = "primary" if st.session_state.view == name else "secondary"
-            if st.button(name, use_container_width=True, type=button_type):
+        for name in ["Overview", "News", "Popular markets", "My stocks"]:
+            btn_type = "primary" if st.session_state.view == name else "secondary"
+            if st.button(name, use_container_width=True, type=btn_type):
                 st.session_state.view = name
                 st.rerun()
 
-view = st.session_state.view
+    st.divider()
+    
+    # Search & Pin Logic (Pins to My Stocks but doesn't show list here)
+    st.subheader("Search & Pin")
+    search_query = st.text_input("Search Name or Ticker", placeholder="e.g. Tesla")
+    
+    if search_query:
+        search = yf.Search(search_query, max_results=3)
+        if search.quotes:
+            options = {f"{r.get('shortname', r['symbol'])}": r for r in search.quotes if 'symbol' in r}
+            selected_name = st.selectbox("Results", options.keys())
+            
+            if selected_name:
+                ticker = options[selected_name]['symbol']
+                if st.button("📌 Pin to My Stocks", use_container_width=True):
+                    # Fetching currency dynamically
+                    info = yf.Ticker(ticker).fast_info
+                    st.session_state.my_stocks[selected_name] = {
+                        "ticker": ticker, 
+                        "currency": info.get('currency', 'USD')
+                    }
+                    st.success(f"Added {selected_name}")
 
-# Main view
+# Main View Dispatcher
+view = st.session_state.view
 st.title("Stock Dashboard")
 
 if view == "Overview":
@@ -103,10 +74,8 @@ if view == "Overview":
     st.divider()
     popular_markets.render()
     st.divider()
-    my_stocks.render()
-elif view == "News":
-    news.render()
-elif view == "Popular markets":
-    popular_markets.render()
+    # Pass the static categories to the renderer
+    my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
 elif view == "My stocks":
-    my_stocks.render()
+    my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
+# ... other views (news, popular_markets) as before
