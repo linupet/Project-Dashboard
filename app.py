@@ -1,6 +1,5 @@
 import streamlit as st
 import yfinance as yf
-
 from sections import news, popular_markets, my_stocks
 
 st.set_page_config(
@@ -8,6 +7,19 @@ st.set_page_config(
     page_icon="📈",
     layout="wide",
 )
+
+# Intializing a session state
+if "view" not in st.session_state:
+    st.session_state.view = "Overview"
+
+if "my_stocks" not in st.session_state:
+    # Initialize with your default list
+    st.session_state.my_stocks = {
+        "AppLovin":    {"ticker": "APP",    "currency": "USD"},
+        "Palantir":    {"ticker": "PLTR",   "currency": "USD"},
+        "Nvidia":      {"ticker": "NVDA",   "currency": "USD"},
+        "Rheinmetall": {"ticker": "RHM.DE", "currency": "EUR"},
+    }
 
 # Style the sidebar nav buttons: stack edge-to-edge with no vertical gap
 # and square corners so consecutive buttons feel like one connected list.
