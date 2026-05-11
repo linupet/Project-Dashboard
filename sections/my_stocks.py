@@ -11,6 +11,10 @@ import yfinance as yf
 from sections._common import get_price_history, build_sparkline
 from sections._watchlist import load, add, remove
 
+# Cap how many cards share a row so sparklines stay readable as the
+# watchlist grows. Extra stocks wrap onto the next row in groups of this size.
+CARDS_PER_ROW = 4
+
 
 def render(editable=True):
     """Render the watchlist.
@@ -40,43 +44,52 @@ def render(editable=True):
             )
         return
 
-    # One column per stock, side by side.
-    cols = st.columns(len(my_stocks))
-    for col, (name, info) in zip(cols, my_stocks.items()):
-        hist = get_price_history(info["ticker"])
-        currency = info["currency"]
-
-        with col:
-            if hist is not None:
-                # Day-over-day change based on the two most recent closes.
-                current_price = hist["Close"].iloc[-1]
-                previous_close = hist["Close"].iloc[-2]
-                change = current_price - previous_close
-                change_pct = (change / previous_close) * 100
-
-                st.metric(
-                    label=name,
-                    value=f"{current_price:,.2f} {currency}",
-                    delta=f"{change:,.2f} ({change_pct:.2f}%)",
-                )
-
-                # displayModeBar=False hides Plotly's floating toolbar.
-                st.plotly_chart(
-                    build_sparkline(hist),
-                    use_container_width=True,
-                    config={"displayModeBar": False},
-                )
-
-                if editable and st.button(
-                    "Remove", key=f"rm_{name}", use_container_width=True
-                ):
-                    remove(name)
-                    st.rerun()
-            else:
-                st.error(f"Unavailable: {name}")
+    # Lay out cards in rows of CARDS_PER_ROW so the grid wraps instead of
+    # shrinking each card when the watchlist grows past one row.
+    items = list(my_stocks.items())
+    for start in range(0, len(items), CARDS_PER_ROW):
+        chunk = items[start:start + CARDS_PER_ROW]
+        cols = st.columns(CARDS_PER_ROW)
+        for col, (name, info) in zip(cols, chunk):
+            _render_card(col, name, info, editable)
 
     st.caption("Graphs show performance over the last 30 days.")
     st.caption("Data: Yahoo Finance.")
+
+
+def _render_card(col, name, info, editable):
+    """Render a single stock card (metric + sparkline + optional Remove button)."""
+    hist = get_price_history(info["ticker"])
+    currency = info["currency"]
+
+    with col:
+        if hist is not None:
+            # Day-over-day change based on the two most recent closes.
+            current_price = hist["Close"].iloc[-1]
+            previous_close = hist["Close"].iloc[-2]
+            change = current_price - previous_close
+            change_pct = (change / previous_close) * 100
+
+            st.metric(
+                label=name,
+                value=f"{current_price:,.2f} {currency}",
+                delta=f"{change:,.2f} ({change_pct:.2f}%)",
+            )
+
+            # displayModeBar=False hides Plotly's floating toolbar.
+            st.plotly_chart(
+                build_sparkline(hist),
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
+
+            if editable and st.button(
+                "Remove", key=f"rm_{name}", use_container_width=True
+            ):
+                remove(name)
+                st.rerun()
+        else:
+            st.error(f"Unavailable: {name}")
 
 
 def _render_search_and_pin():
