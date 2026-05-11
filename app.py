@@ -67,4 +67,4 @@ elif view == "Popular markets":
 elif view == "Popular stocks":
     popular_stocks.render()
 elif view == "My stocks":
-    my_stocks.render(popular_stocks.MOST_POPULAR, popular_stocks.LOCAL_STOCKS)
+    my_stocks.render()

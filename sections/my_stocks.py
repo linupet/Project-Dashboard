@@ -1,46 +1,55 @@
+"""Personal watchlist section.
+
+Renders the user's saved stocks read from `data/my_stocks.json`.
+Add/remove UI is added in a later commit.
+"""
+
 import streamlit as st
+
 from sections._common import get_price_history, build_sparkline
+from sections._watchlist import load
 
-def render(most_popular, local_stocks):
-    # --- Category 1: Most Popular ---
-    st.header("Most Popular Stocks")
-    render_stock_row(most_popular)
 
-    st.divider()
+def render():
+    st.header("My stocks")
 
-    # --- Category 2: Local Stocks ---
-    st.header("Local Stocks")
-    render_stock_row(local_stocks)
+    my_stocks = load()
 
-    st.divider()
+    if not my_stocks:
+        st.info(
+            "Your watchlist is empty. "
+            "Search and pin stocks to start tracking them here."
+        )
+        return
 
-    # --- Category 3: User Pinned Stocks ---
-    st.header("My Favorite Stocks")
-    pinned = st.session_state.get("my_stocks", {})
-    if pinned:
-        render_stock_row(pinned, can_unpin=True)
-    else:
-        st.info("Search and pin stocks in the sidebar to see them here.")
-
-def render_stock_row(stock_map, can_unpin=False):
-    cols = st.columns(len(stock_map))
-    for col, (name, info) in zip(cols, stock_map.items()):
+    # One column per stock, side by side.
+    cols = st.columns(len(my_stocks))
+    for col, (name, info) in zip(cols, my_stocks.items()):
         hist = get_price_history(info["ticker"])
+        currency = info["currency"]
+
         with col:
             if hist is not None:
-                curr = hist['Close'].iloc[-1]
-                prev = hist['Close'].iloc[-2]
-                change = curr - prev
-                pcnt = (change / prev) * 100
-                
-                st.metric(label=name, value=f"{curr:,.2f} {info['currency']}", 
-                          delta=f"{change:,.2f} ({pcnt:.2f}%)")
-                st.plotly_chart(build_sparkline(hist), use_container_width=True, 
-                                config={"displayModeBar": False})
-                
-                if can_unpin:
-                    if st.button(f"Unpin {info['ticker']}", key=f"un_{info['ticker']}"):
-                        del st.session_state.my_stocks[name]
-                        st.rerun()
+                # Day-over-day change based on the two most recent closes.
+                current_price = hist["Close"].iloc[-1]
+                previous_close = hist["Close"].iloc[-2]
+                change = current_price - previous_close
+                change_pct = (change / previous_close) * 100
+
+                st.metric(
+                    label=name,
+                    value=f"{current_price:,.2f} {currency}",
+                    delta=f"{change:,.2f} ({change_pct:.2f}%)",
+                )
+
+                # displayModeBar=False hides Plotly's floating toolbar.
+                st.plotly_chart(
+                    build_sparkline(hist),
+                    use_container_width=True,
+                    config={"displayModeBar": False},
+                )
             else:
-                st.error(f"Error: {name}")
+                st.error(f"Unavailable: {name}")
+
+    st.caption("Graphs show performance over the last 30 days.")
+    st.caption("Data: Yahoo Finance.")
