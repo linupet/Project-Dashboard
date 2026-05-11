@@ -76,6 +76,9 @@ if view == "Overview":
     st.divider()
     # Pass the static categories to the renderer
     my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
+elif view == "News":
+    news.render()
+elif view == "Popular markets":
+    popular_markets.render()
 elif view == "My stocks":
     my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
-# ... other views (news, popular_markets) as before
