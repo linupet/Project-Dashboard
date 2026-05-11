@@ -12,20 +12,32 @@ from sections._common import get_price_history, build_sparkline
 from sections._watchlist import load, add, remove
 
 
-def render():
+def render(editable=True):
+    """Render the watchlist.
+
+    When `editable` is False the Search & Pin block and per-card Remove
+    buttons are hidden — used on the Overview page so add/remove is only
+    available on the dedicated My stocks page.
+    """
     st.header("My stocks")
 
-    _render_search_and_pin()
-
-    st.divider()
+    if editable:
+        _render_search_and_pin()
+        st.divider()
 
     my_stocks = load()
 
     if not my_stocks:
-        st.info(
-            "Your watchlist is empty. "
-            "Search above to pin stocks and start tracking them here."
-        )
+        if editable:
+            st.info(
+                "Your watchlist is empty. "
+                "Search above to pin stocks and start tracking them here."
+            )
+        else:
+            st.info(
+                "Your watchlist is empty. "
+                "Go to My stocks in the sidebar to add some."
+            )
         return
 
     # One column per stock, side by side.
@@ -55,7 +67,9 @@ def render():
                     config={"displayModeBar": False},
                 )
 
-                if st.button("Remove", key=f"rm_{name}", use_container_width=True):
+                if editable and st.button(
+                    "Remove", key=f"rm_{name}", use_container_width=True
+                ):
                     remove(name)
                     st.rerun()
             else:

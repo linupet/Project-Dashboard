@@ -32,6 +32,8 @@ if view == "Overview":
     popular_markets.render()
     st.divider()
     popular_stocks.render()
+    st.divider()
+    my_stocks.render(editable=False)
 elif view == "News":
     news.render()
 elif view == "Popular markets":
