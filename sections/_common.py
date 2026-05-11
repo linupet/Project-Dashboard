@@ -35,6 +35,47 @@ def get_price_history(ticker_symbol, period="1mo"):
     return hist
 
 
+def render_metric_card(col, name, info, on_remove=None):
+    """Render one ticker card (metric + sparkline) inside `col`.
+
+    `info` must contain `ticker` and `currency` keys. If `on_remove` is
+    provided, a Remove button is rendered below the chart that calls
+    `on_remove(name)` and reruns the app. This is the single place all
+    sections (popular_markets, popular_stocks, my_stocks) use to render
+    a card, so any formatting tweak applies everywhere.
+    """
+    hist = get_price_history(info["ticker"])
+    with col:
+        if hist is None:
+            st.error(f"Unavailable: {name}")
+            return
+
+        # Day-over-day change based on the two most recent closes.
+        current_price = hist["Close"].iloc[-1]
+        previous_close = hist["Close"].iloc[-2]
+        change = current_price - previous_close
+        change_pct = (change / previous_close) * 100
+
+        st.metric(
+            label=name,
+            value=f"{current_price:,.2f} {info['currency']}",
+            delta=f"{change:,.2f} ({change_pct:.2f}%)",
+        )
+
+        # displayModeBar=False hides Plotly's floating toolbar.
+        st.plotly_chart(
+            build_sparkline(hist),
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
+
+        if on_remove is not None and st.button(
+            "Remove", key=f"rm_{name}", use_container_width=True
+        ):
+            on_remove(name)
+            st.rerun()
+
+
 # Returns a minimal Plotly area chart: blue line with a vertical gradient
 # fill that fades to transparent at the bottom, no axes or legend.
 def build_sparkline(hist):
