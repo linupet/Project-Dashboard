@@ -1,6 +1,5 @@
 import streamlit as st
 import yfinance as yf
-
 from sections import news, popular_markets, my_stocks
 
 st.set_page_config(
@@ -9,61 +8,65 @@ st.set_page_config(
     layout="wide",
 )
 
-# Style the sidebar nav buttons: stack edge-to-edge with no vertical gap
-# and square corners so consecutive buttons feel like one connected list.
-# We target the inner vertical block (created by st.container() below) so
-# the rest of the sidebar keeps its normal spacing.
-st.markdown(
-    """
-    <style>
-    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
-        gap: 0;
-    }
-    section[data-testid="stSidebar"] .stButton > button {
-        border-radius: 0;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Initialize Session State for custom pinned stocks
+if "my_stocks" not in st.session_state:
+    st.session_state.my_stocks = {}
 
-VIEW_NAMES = ["Overview", "News", "Popular markets", "My stocks"]
+# Define Static Categories
+MOST_POPULAR = {
+    "Apple": {"ticker": "AAPL", "currency": "USD"},
+    "Microsoft": {"ticker": "MSFT", "currency": "USD"},
+    "Google": {"ticker": "GOOGL", "currency": "USD"},
+    "Nvidia": {"ticker": "NVDA", "currency": "USD"},
+}
 
-# Streamlit reruns the whole script on every interaction, so we keep the
-# selected view in session_state so it survives across reruns.
-if "view" not in st.session_state:
-    st.session_state.view = "Overview"
+LOCAL_STOCKS = {
+    "Investor AB": {"ticker": "INVE-B.ST", "currency": "SEK"},
+    "Atlas Copco": {"ticker": "ATCO-B.ST", "currency": "SEK"},
+    "Volvo B": {"ticker": "VOLV-B.ST", "currency": "SEK"},
+    "Ericsson B": {"ticker": "ERIC-B.ST", "currency": "SEK"},
+}
 
-# Sidebar
+# Sidebar Logic
 with st.sidebar:
     st.title("Stock Dashboard")
-
-    # Search bar for an arbitrary ticker; shows its current price below.
-    ticker_input = st.text_input(
-        "Search Stock Ticker",
-        placeholder="Write your ticker here",
-    ).upper()
-    if ticker_input:
-        try:
-            ticker_data = yf.Ticker(ticker_input)
-            info = ticker_data.info
-            st.write(f"**Current Price:** ${info.get('currentPrice', 'N/A')}")
-        except Exception:
-            st.error("Invalid Ticker")
-
-    # One full-width button per section, wrapped in a container so the CSS
-    # above can remove the gap between them. The currently selected view is
-    # rendered as a "primary" button so it stands out.
+    
+    # Navigation
+    if "view" not in st.session_state:
+        st.session_state.view = "Overview"
+    
     with st.container():
-        for name in VIEW_NAMES:
-            button_type = "primary" if st.session_state.view == name else "secondary"
-            if st.button(name, use_container_width=True, type=button_type):
+        for name in ["Overview", "News", "Popular markets", "My stocks"]:
+            btn_type = "primary" if st.session_state.view == name else "secondary"
+            if st.button(name, use_container_width=True, type=btn_type):
                 st.session_state.view = name
                 st.rerun()
 
-view = st.session_state.view
+    st.divider()
+    
+    # Search & Pin Logic (Pins to My Stocks but doesn't show list here)
+    st.subheader("Search & Pin")
+    search_query = st.text_input("Search Name or Ticker", placeholder="e.g. Tesla")
+    
+    if search_query:
+        search = yf.Search(search_query, max_results=3)
+        if search.quotes:
+            options = {f"{r.get('shortname', r['symbol'])}": r for r in search.quotes if 'symbol' in r}
+            selected_name = st.selectbox("Results", options.keys())
+            
+            if selected_name:
+                ticker = options[selected_name]['symbol']
+                if st.button("📌 Pin to My Stocks", use_container_width=True):
+                    # Fetching currency dynamically
+                    info = yf.Ticker(ticker).fast_info
+                    st.session_state.my_stocks[selected_name] = {
+                        "ticker": ticker, 
+                        "currency": info.get('currency', 'USD')
+                    }
+                    st.success(f"Added {selected_name}")
 
-# Main view
+# Main View Dispatcher
+view = st.session_state.view
 st.title("Stock Dashboard")
 
 if view == "Overview":
@@ -71,10 +74,8 @@ if view == "Overview":
     st.divider()
     popular_markets.render()
     st.divider()
-    my_stocks.render()
-elif view == "News":
-    news.render()
-elif view == "Popular markets":
-    popular_markets.render()
+    # Pass the static categories to the renderer
+    my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
 elif view == "My stocks":
-    my_stocks.render()
+    my_stocks.render(MOST_POPULAR, LOCAL_STOCKS)
+# ... other views (news, popular_markets) as before
