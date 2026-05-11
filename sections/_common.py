@@ -1,7 +1,7 @@
 """Shared helpers used by the dashboard sections.
 
-Provides the cached price-history fetch and the Plotly sparkline
-builder that both my_stocks and popular_markets render with.
+Provides the cached price-history fetch, the Plotly sparkline builder,
+and the metric-card renderer that every section uses to draw a ticker.
 """
 
 import logging
@@ -13,19 +13,18 @@ import plotly.graph_objects as go
 logger = logging.getLogger(__name__)
 
 
-# Cached for 10 minutes so Streamlit reruns don't refetch on every interaction.
+# Cache for 10 minutes — Streamlit reruns on every interaction.
 @st.cache_data(ttl=600)
 def get_price_history(ticker_symbol, period="1mo"):
-    """Returns the price history DataFrame, or None if unavailable.
+    """Return the price history DataFrame, or None if unavailable.
 
-    A history of fewer than 2 rows is treated as unavailable since the
-    callers compute a day-over-day change from the last two closes.
+    Fewer than 2 rows counts as unavailable since callers compute a
+    day-over-day change from the last two closes.
     """
     try:
         hist = yf.Ticker(ticker_symbol).history(period=period)
     except Exception:
-        # Log with traceback so failures are visible in the terminal,
-        # but keep the UI clean by returning None.
+        # Log with traceback for the terminal, return None to keep the UI clean.
         logger.exception("Failed to fetch history for %s", ticker_symbol)
         return None
 
@@ -39,10 +38,7 @@ def render_metric_card(col, name, info, on_remove=None):
     """Render one ticker card (metric + sparkline) inside `col`.
 
     `info` must contain `ticker` and `currency` keys. If `on_remove` is
-    provided, a Remove button is rendered below the chart that calls
-    `on_remove(name)` and reruns the app. This is the single place all
-    sections (popular_markets, popular_stocks, my_stocks) use to render
-    a card, so any formatting tweak applies everywhere.
+    provided, a Remove button calls `on_remove(name)` and reruns the app.
     """
     hist = get_price_history(info["ticker"])
     with col:
@@ -50,7 +46,7 @@ def render_metric_card(col, name, info, on_remove=None):
             st.error(f"Unavailable: {name}")
             return
 
-        # Day-over-day change based on the two most recent closes.
+        # Day-over-day change from the two most recent closes.
         current_price = hist["Close"].iloc[-1]
         previous_close = hist["Close"].iloc[-2]
         change = current_price - previous_close
@@ -62,7 +58,7 @@ def render_metric_card(col, name, info, on_remove=None):
             delta=f"{change:,.2f} ({change_pct:.2f}%)",
         )
 
-        # displayModeBar=False hides Plotly's floating toolbar.
+        # Hide Plotly's floating toolbar — it's noise on a sparkline.
         st.plotly_chart(
             build_sparkline(hist),
             use_container_width=True,
@@ -76,20 +72,19 @@ def render_metric_card(col, name, info, on_remove=None):
             st.rerun()
 
 
-# Returns a minimal Plotly area chart: blue line with a vertical gradient
-# fill that fades to transparent at the bottom, no axes or legend.
 def build_sparkline(hist):
+    """Minimal Plotly area chart: blue line, gradient fill, no axes."""
     color_line = "#3b82f6"
 
-    # Slightly padded y-range so the line doesn't touch the chart edges.
+    # Pad the y-range so the line doesn't touch the chart edges.
     y_min = hist["Close"].min() * 0.98
     y_max = hist["Close"].max() * 1.02
 
     fig = go.Figure()
 
-    # Invisible baseline at y_min. The price trace fills "tonexty" down to
-    # this trace, which makes the gradient span the visible chart area
-    # instead of stretching from y=0 (far below the padded y-range).
+    # Invisible baseline at y_min. The price trace fills "tonexty" down
+    # to this trace so the gradient spans only the visible y-range
+    # instead of stretching from y=0.
     fig.add_trace(go.Scatter(
         x=hist.index,
         y=[y_min] * len(hist),
@@ -99,7 +94,6 @@ def build_sparkline(hist):
         showlegend=False,
     ))
 
-    # Price line with a vertical gradient fill down to the baseline above.
     fig.add_trace(go.Scatter(
         x=hist.index,
         y=hist["Close"],
@@ -113,13 +107,12 @@ def build_sparkline(hist):
                 [1.0, "rgba(59,130,246,0.4)"],   # top: 40% opacity blue
             ],
         ),
-        # <extra></extra> removes the default trace label from the hover box.
+        # <extra></extra> drops the default trace label from the hover box.
         hovertemplate="%{x|%b %d}<br>%{y:,.2f}<extra></extra>",
         showlegend=False,
     ))
 
-    # Edge-to-edge layout with hidden axes and a transparent background
-    # so the chart blends into the surrounding Streamlit column.
+    # Edge-to-edge, transparent so the chart blends into the column.
     fig.update_layout(
         height=120,
         margin=dict(l=0, r=0, t=0, b=0),

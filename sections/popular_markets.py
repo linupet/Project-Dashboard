@@ -1,9 +1,10 @@
+"""Popular markets section — static list of major index tickers."""
+
 import streamlit as st
 
 from sections._common import render_metric_card
 
-# Popular markets to display, each with its Yahoo Finance ticker and
-# the currency the index is quoted in.
+# Each value holds the Yahoo Finance ticker and the index's quote currency.
 MARKETS = {
     "S&P 500":   {"ticker": "^GSPC",  "currency": "USD"},
     "NASDAQ":    {"ticker": "^IXIC",  "currency": "USD"},
@@ -15,7 +16,6 @@ MARKETS = {
 def render():
     st.header("Popular Markets")
 
-    # One column per market, side by side.
     cols = st.columns(len(MARKETS))
     for col, (name, info) in zip(cols, MARKETS.items()):
         render_metric_card(col, name, info)

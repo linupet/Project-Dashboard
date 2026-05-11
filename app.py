@@ -1,3 +1,5 @@
+"""App entry point: sidebar navigation and view dispatcher."""
+
 import streamlit as st
 from sections import news, popular_markets, popular_stocks, my_stocks
 
@@ -7,11 +9,9 @@ st.set_page_config(
     layout="wide",
 )
 
-# Sidebar Logic
 with st.sidebar:
     st.title("Stock Dashboard")
 
-    # Navigation
     if "view" not in st.session_state:
         st.session_state.view = "Overview"
 
@@ -22,7 +22,6 @@ with st.sidebar:
                 st.session_state.view = name
                 st.rerun()
 
-# Main View Dispatcher
 view = st.session_state.view
 st.title("Stock Dashboard")
 

@@ -1,9 +1,4 @@
-"""Personal watchlist section.
-
-Renders the user's saved stocks, persisted to `data/my_stocks.json`,
-and lets the user search Yahoo Finance to pin new tickers or remove
-existing ones.
-"""
+"""Personal watchlist — pin and remove stocks, persisted to data/my_stocks.json."""
 
 import streamlit as st
 import yfinance as yf
@@ -11,8 +6,7 @@ import yfinance as yf
 from sections._common import render_metric_card
 from sections._watchlist import load, add, remove
 
-# Cap how many cards share a row so sparklines stay readable as the
-# watchlist grows. Extra stocks wrap onto the next row in groups of this size.
+# Wrap to a new row after this many cards so sparklines stay readable.
 CARDS_PER_ROW = 4
 
 
@@ -44,9 +38,7 @@ def render(editable=True):
             )
         return
 
-    # Lay out cards in rows of CARDS_PER_ROW so the grid wraps instead of
-    # shrinking each card when the watchlist grows past one row.
-    # `on_remove` is only wired up in editable mode so Overview stays read-only.
+    # Only editable mode wires up Remove — Overview stays read-only.
     items = list(my_stocks.items())
     on_remove = remove if editable else None
     for start in range(0, len(items), CARDS_PER_ROW):
@@ -60,7 +52,7 @@ def render(editable=True):
 
 
 def _render_search_and_pin():
-    """Yahoo Finance search box that lets the user pin a stock to the watchlist."""
+    """Yahoo Finance search box for pinning new stocks to the watchlist."""
     st.subheader("Add a stock")
     search_query = st.text_input(
         "Search name or ticker",
@@ -78,8 +70,8 @@ def _render_search_and_pin():
         st.error("Could not perform search. Try again in a moment.")
         return
 
-    # Build a label → result map so the selectbox shows readable names
-    # but we can still look up the underlying symbol.
+    # Label → result map so the selectbox shows readable names but we
+    # can still recover the underlying symbol.
     options = {
         f"{r.get('shortname', r['symbol'])} ({r['symbol']})": r
         for r in results

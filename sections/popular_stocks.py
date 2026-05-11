@@ -1,8 +1,4 @@
-"""Curated stock categories shown read-only.
-
-Holds two static lists — the most-followed global stocks and a set of
-local Swedish picks — and renders them as side-by-side cards.
-"""
+"""Curated stock lists (global + Swedish) shown read-only."""
 
 import streamlit as st
 
