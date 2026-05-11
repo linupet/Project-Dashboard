@@ -24,12 +24,12 @@ LOCAL_STOCKS = {
 
 
 def render():
-    st.header("Most Popular Stocks")
+    st.header("Global Popular Stocks")
     _render_row(MOST_POPULAR)
 
     st.divider()
 
-    st.header("Local Stocks")
+    st.header("Local Popular Stocks")
     _render_row(LOCAL_STOCKS)
 
     st.caption("Graphs show performance over the last 30 days.")
