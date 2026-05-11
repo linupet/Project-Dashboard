@@ -1,13 +1,9 @@
-"""Persisted personal watchlist storage.
-
-Reads and writes the user's My-stocks selection to a JSON file so
-customisations survive across sessions.
-"""
+"""JSON-backed storage for the personal watchlist."""
 
 import json
 from pathlib import Path
 
-# Path resolved relative to this file so it works wherever the app is launched.
+# Resolved relative to this file so it works wherever the app is launched.
 WATCHLIST_PATH = Path(__file__).parent.parent / "data" / "my_stocks.json"
 
 
