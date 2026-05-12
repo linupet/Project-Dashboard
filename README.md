@@ -15,8 +15,6 @@ Welcome to the **Project Dashboard**! 🚀 This project is designed to be your a
 
 ## 🛠️ Installation & Tech Stack
 
-Our project is in python so, to begin with you will need a local python enviroment.
-
 Our `requirements.txt` file contains all the necessary dependencies to get your environment up and running. Here are the heavy hitters powering the app:
 
 | Library | Function |
@@ -24,8 +22,6 @@ Our `requirements.txt` file contains all the necessary dependencies to get your 
 | **Streamlit** | Transforms pure Python scripts into beautiful, interactive web dashboards instantly. |
 | **Plotly** | Renders high-fidelity, interactive charts that make complex stock data easy to visualize. |
 | **yfinance** | The backbone of our data, fetching reliable pricing, historical trends, and news via ticker symbols. |
-
-Use the command `pip install -r requirements.txt` to install all the necessary libraries and interface to run our program.
 
 ---
 
