@@ -1,7 +1,7 @@
 """App entry point: sidebar navigation and view dispatcher."""
 
 import streamlit as st
-from sections import popular_markets, popular_stocks, my_stocks
+from sections import popular_markets, popular_stocks, my_stocks, sidebar_search
 
 st.set_page_config(
     page_title="Stock Dashboard",
@@ -21,6 +21,9 @@ with st.sidebar:
             if st.button(name, use_container_width=True, type=btn_type):
                 st.session_state.view = name
                 st.rerun()
+
+    st.divider()
+    sidebar_search.render()
 
 view = st.session_state.view
 st.title("Stock Dashboard")
