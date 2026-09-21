@@ -1,41 +1,70 @@
-# 📈 Interactive Stock Intelligence Dashboard
+# Stock Market Dashboard
 
-Welcome to the **Project Dashboard**! 🚀 This project is designed to be your all-in-one financial command center. Instead of jumping between tabs, we’ve consolidated global market insights, real-time stock tracking, and predictive analytics into a single, sleek interface.
+A small Streamlit app for keeping an eye on the stock market. It shows a few major indices, a set of popular US and Swedish stocks, and a personal watchlist where you can pin the stocks you want to follow. All data comes from Yahoo Finance through the [yfinance](https://github.com/ranaroussi/yfinance) library.
 
----
+Built by [Linus Pettersson](https://github.com/linupet) and [Somya Tanwar](https://github.com/tanwarsomya) in spring 2026.
 
-## ✨ Key Features
+## Features
 
-* **Global Market Pulse**: Keep a finger on the pulse of major indices and markets across the globe in real-time.
-* **Precision Stock Tracking**: Monitor your personal portfolio with live updates and detailed performance metrics.
-* **Curated Financial News**: Stay informed with a dynamic feed of breaking news from the world's top financial outlets.
-* **Smart Pricing Algorithms**: Leverage custom data models to analyze individual stock trends and potential valuations.
+- Overview: indices, popular stocks and your watchlist on one page.
+- Popular markets: S&P 500, NASDAQ, Dow Jones and DAX.
+- Popular stocks: Apple, Microsoft, Google and Nvidia, plus Investor, Atlas Copco, Volvo and Ericsson from Nasdaq Stockholm.
+- My stocks: search by company name or ticker, pin stocks to your watchlist and remove them again. The list is saved to `data/my_stocks.json`, so it's still there the next time you start the app.
+- Quick search: look up any stock from the sidebar and see its price without leaving the page you're on.
 
----
+Each index and stock is shown as a card with the latest price, the change since the previous close and a chart of the last month.
 
-## 🛠️ Installation & Tech Stack
+## Getting started
 
-Our project is in python so, to begin with you will need a local python enviroment.
+You need Python 3.10 or later.
 
-Our `requirements.txt` file contains all the necessary dependencies to get your environment up and running. Here are the heavy hitters powering the app:
+```bash
+git clone https://github.com/linupet/Project-Dashboard.git
+cd Project-Dashboard
+```
 
-| Library | Function |
-| :--- | :--- |
-| **Streamlit** | Transforms pure Python scripts into beautiful, interactive web dashboards instantly. |
-| **Plotly** | Renders high-fidelity, interactive charts that make complex stock data easy to visualize. |
-| **yfinance** | The backbone of our data, fetching reliable pricing, historical trends, and news via ticker symbols. |
+Create and activate a virtual environment.
 
-Use the command `pip install -r requirements.txt` to install all the necessary libraries and interface to run our program.
+macOS / Linux:
 
----
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-## 🚀 User Guide
+Windows:
 
-Getting started is simple. The entire application is orchestrated through the main entry point: `app.py`. 
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-1.  **Prepare your environment**: Ensure all dependencies are installed in your local virtual environment.
-2.  **Launch the app**: Open your terminal and execute the following command:
+Install the dependencies and start the app:
 
-`streamlit run app.py`
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-Once the local server starts, your default web browser will open to display your brand-new financial dashboard. Happy trading! 📉✅
+The app opens in your browser at http://localhost:8501.
+
+## How it works
+
+- `app.py` is the entry point. It builds the sidebar and decides which page to show.
+- `sections/_common.py` fetches price history and draws the cards and charts that every page uses.
+- `sections/_watchlist.py` reads and writes the watchlist file.
+- The rest of `sections/` has one file per page, plus the sidebar search.
+- `.streamlit/config.toml` sets the dark theme.
+
+Streamlit reruns the whole script every time you click something, so price data is cached for 10 minutes and search results for 5 minutes with `st.cache_data`. Without it, every click would fetch everything from Yahoo again.
+
+If a ticker can't be loaded, its card says "Unavailable" and the error is logged in the terminal instead of breaking the page.
+
+## Limitations
+
+- yfinance is an unofficial library, not an official Yahoo API. Prices can be delayed, and requests sometimes fail or get rate-limited.
+- The watchlist is a local file, so it isn't shared between computers or users.
+
+## Built with
+
+Python, Streamlit, Plotly and yfinance.
