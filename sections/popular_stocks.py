@@ -35,4 +35,4 @@ def render():
 def _render_row(stock_map):
     cols = st.columns(len(stock_map))
     for col, (name, info) in zip(cols, stock_map.items()):
-        render_metric_card(col, name, info)
+        render_metric_card(col, name, info, key_prefix="popular")

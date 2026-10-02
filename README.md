@@ -11,6 +11,7 @@ Built by [Linus Pettersson](https://github.com/linupet) and [Somya Tanwar](https
 - Popular stocks: Apple, Microsoft, Google and Nvidia, plus Investor, Atlas Copco, Volvo and Ericsson from Nasdaq Stockholm.
 - My stocks: search by company name or ticker, pin stocks to your watchlist and remove them again. The list is saved to `data/my_stocks.json`, so it's still there the next time you start the app.
 - Quick search: look up any stock from the sidebar and see its price without leaving the page you're on.
+- Stock details: press Details on a My stocks card to open that stock's own page, with a price chart for 1 month to 5 years, key data such as market cap, P/E and analyst targets, the latest news, and a Run Monte Carlo button that simulates possible future prices.
 
 Each index and stock is shown as a card with the latest price, the change since the previous close and a chart of the last month.
 
@@ -53,6 +54,7 @@ The app opens in your browser at http://localhost:8501.
 - `app.py` is the entry point. It builds the sidebar and decides which page to show.
 - `sections/_common.py` fetches price history and draws the cards and charts that every page uses.
 - `sections/_watchlist.py` reads and writes the watchlist file.
+- `sections/stock_detail.py` is the per-stock page, and `sections/monte_carlo.py` runs the simulations shown on it.
 - The rest of `sections/` has one file per page, plus the sidebar search.
 - `.streamlit/config.toml` sets the dark theme.
 
