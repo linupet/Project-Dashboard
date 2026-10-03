@@ -18,7 +18,7 @@ def render():
 
     cols = st.columns(len(MARKETS))
     for col, (name, info) in zip(cols, MARKETS.items()):
-        render_metric_card(col, name, info)
+        render_metric_card(col, name, info, key_prefix="markets")
 
     st.caption("Graphs show performance over the last 30 days.")
     st.caption("Data: Yahoo Finance.")

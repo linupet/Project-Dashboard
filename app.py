@@ -1,7 +1,9 @@
 """App entry point: sidebar navigation and view dispatcher."""
 
 import streamlit as st
-from sections import popular_markets, popular_stocks, my_stocks, sidebar_search
+from sections import (
+    popular_markets, popular_stocks, my_stocks, stock_detail, sidebar_search,
+)
 
 st.set_page_config(
     page_title="Stock Dashboard",
@@ -40,3 +42,6 @@ elif view == "Popular stocks":
     popular_stocks.render()
 elif view == "My stocks":
     my_stocks.render()
+elif view == "Stock":
+    # Opened from a Details button on a My stocks card.
+    stock_detail.render()

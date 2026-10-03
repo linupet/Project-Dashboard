@@ -34,11 +34,14 @@ def get_price_history(ticker_symbol, period="1mo"):
     return hist
 
 
-def render_metric_card(col, name, info, on_remove=None):
+def render_metric_card(col, name, info, key_prefix, on_remove=None, on_open=None):
     """Render one ticker card (metric + sparkline) inside `col`.
 
-    `info` must contain `ticker` and `currency` keys. If `on_remove` is
-    provided, a Remove button calls `on_remove(name)` and reruns the app.
+    `info` must contain `ticker` and `currency` keys. `key_prefix` keeps
+    widget keys unique when the same stock appears in several sections.
+    If `on_open` is provided, a Details button calls `on_open(name)`; if
+    `on_remove` is provided, a Remove button calls `on_remove(name)`.
+    Both rerun the app.
     """
     hist = get_price_history(info["ticker"])
     with col:
@@ -59,20 +62,29 @@ def render_metric_card(col, name, info, on_remove=None):
         )
 
         # Hide Plotly's floating toolbar — it's noise on a sparkline.
+        # The explicit key avoids a duplicate-ID error when two sections
+        # draw the same ticker (and so an identical chart) on one page.
         st.plotly_chart(
             build_sparkline(hist),
             use_container_width=True,
             config={"displayModeBar": False},
+            key=f"{key_prefix}_spark_{name}",
         )
 
+        if on_open is not None and st.button(
+            "Details", key=f"{key_prefix}_open_{name}", use_container_width=True
+        ):
+            on_open(name)
+            st.rerun()
+
         if on_remove is not None and st.button(
-            "Remove", key=f"rm_{name}", use_container_width=True
+            "Remove", key=f"{key_prefix}_rm_{name}", use_container_width=True
         ):
             on_remove(name)
             st.rerun()
 
 
-def build_sparkline(hist):
+def build_sparkline(hist, height=120):
     """Minimal Plotly area chart: blue line, gradient fill, no axes."""
     color_line = "#3b82f6"
 
@@ -114,7 +126,7 @@ def build_sparkline(hist):
 
     # Edge-to-edge, transparent so the chart blends into the column.
     fig.update_layout(
-        height=120,
+        height=height,
         margin=dict(l=0, r=0, t=0, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
